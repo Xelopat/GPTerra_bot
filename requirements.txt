@@ -1,0 +1,6 @@
+mysql~=0.0.3
+mysql-connector-python~=8.0.31
+openai~=0.27.2
+matplotlib~=3.5.1
+requests~=2.27.1
+beautifulsoup4~=4.12.0
