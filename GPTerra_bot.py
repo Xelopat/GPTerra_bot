@@ -4,6 +4,7 @@ import openai
 
 import matplotlib
 
+
 import telebot
 from matplotlib import pyplot as plt
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
