@@ -6,7 +6,7 @@ import matplotlib
 
 import telebot
 from matplotlib import pyplot as plt
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto, InputMediaVideo
 
 from db import *
 from keyboard import *
@@ -20,9 +20,9 @@ bot = telebot.TeleBot("6181517228:AAEtFBfBC_H8LAWxj9ZBnm9w1wtzcyfKvHw", parse_mo
 kf = 3
 kf_i = 2
 
-new_key = get_key()
-if new_key:
-    openai.api_key = new_key
+my_key = get_key()
+if my_key:
+    openai.api_key = my_key
 else:
     change_key("")
     openai.api_key = get_key()
@@ -123,10 +123,12 @@ def new_message(message):
         if len(text) > 2000:
             bot.send_message(user_id, "⚠️Максимальное число символов - 2000⚠️")
             return
-        to_edit = bot.send_message(user_id, "⌛️Ожидание ответа", reply_to_message_id=message_id).message_id
+
         try:
             my_model = get_model(user_id)
             if my_model == "DALLE":
+                to_edit = bot.send_animation(user_id, open('load_photo.gif', 'rb'),
+                                               reply_to_message_id=message_id).message_id
                 response = openai.Image.create(
                     prompt=text,
                     n=1,
@@ -135,8 +137,12 @@ def new_message(message):
                 amount = kf_i * (price["DALLE"] * ruble_rate)
                 update_balance(user_id, -amount)
                 image_url = response['data'][0]['url']
-                bot.edit_message_media(InputMediaPhoto(image_url), user_id, message_id)
+                img_data = requests.get(image_url).content
+                with open(f'./users_photos/{user_id}.jpg', 'wb') as handler:
+                    handler.write(img_data)
+                bot.edit_message_media(InputMediaPhoto(open(f'./users_photos/{user_id}.jpg', 'rb')), user_id, to_edit)
             else:
+                to_edit = bot.send_message(user_id, "⌛️Ожидание ответа", reply_to_message_id=message_id).message_id
                 response = openai.Completion.create(engine=my_model,
                                                     prompt=text,
                                                     temperature=0.7,
@@ -157,6 +163,7 @@ def new_message(message):
                 bot.edit_message_text(result[first:], chat_id, to_edit)
         except Exception as e:
             e = str(e)
+            print(e)
             if e == limit_err:
                 if change_key("limit"):
                     openai.api_key = get_key()
@@ -187,7 +194,6 @@ def switch_ai(message):
         bot.send_message(user_id, "Админка", reply_markup=admin_k)
         return
     model = delete_emoji(text)
-    print(model)
     if model in price:
         bot.send_message(user_id, description[model])
         update_model(user_id, model)
@@ -205,6 +211,7 @@ def set_key(message):
         return
     info = text.split()
     if len(info) == 3:
+        print(info)
         new_key(info[0], info[1], info[2])
         openai.api_key = text
         bot.send_message(user_id, "Ключ добавлен", reply_markup=admin_k)

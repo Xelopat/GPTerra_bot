@@ -3,7 +3,7 @@ import openai
 from mysql.connector import OperationalError, InterfaceError
 
 sql_host = "localhost"
-sql_db = "chat_gpt"
+sql_db = "GPTerra"
 sql_user = "root"
 
 sql_password = "root"  # local
