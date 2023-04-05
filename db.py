@@ -36,12 +36,16 @@ def db_init():
     cursor = get_cursor()
     cursor.execute("CREATE TABLE IF NOT EXISTS users("
                    "user_id BIGINT PRIMARY KEY,"
-                   "tokens INT DEFAULT 20000,"
+                   "model TEXT,"
+                   "balance FLOAT DEFAULT 10,"
                    "refers INT DEFAULT 0,"
                    "date DATE DEFAULT (CURRENT_DATE)"
                    ")")
-    cursor.execute("CREATE TABLE IF NOT EXISTS options("
-                   "openai_key TEXT"
+    cursor.execute("CREATE TABLE IF NOT EXISTS keys("
+                   "openai_key TEXT,"
+                   "balance INT,"
+                   "login TEXT,"
+                   "is_active BOOL DEFAULT 0"
                    ")")
     conn.commit()
     if not get_key():
@@ -49,6 +53,15 @@ def db_init():
         conn.commit()
     cursor.close()
 
+
+def change_key(error):
+    global conn
+    cursor = get_cursor()
+    if error == "limit":
+        cursor.execute(f"DELETE FROM keys WHERE is_active=1")
+    else:
+        cursor.execute(f"UPDATE keys SET balance=0, is_active=0 WHERE is_active=1")
+    cursor.execute("UPDATE keys SET is_active=1 WHERE balance > 0 LIMIT 1")
 
 def user_exists(user_id):
     global conn
@@ -59,10 +72,22 @@ def user_exists(user_id):
     cursor = get_cursor()
     if is_exists:
         return True
-    cursor.execute(f"INSERT INTO users(user_id) VALUES({user_id})")
+    cursor.execute(f"INSERT INTO users(user_id, model) VALUES({user_id}, 'gpt-3.5-turbo')")
     conn.commit()
     cursor.close()
     return False
+
+
+def get_model(user_id):
+    global conn
+    try:
+        cursor = get_cursor()
+        cursor.execute(f"SELECT model FROM users WHERE user_id=%s", (user_id,))
+        model = cursor.fetchone()[0]
+        return model
+    except Exception as e:
+        print(e)
+        return "text-davinci-003"
 
 
 def get_statistic_day():
@@ -111,13 +136,13 @@ def get_all_users(block=False):
         return []
 
 
-def get_tokens(user_id):
+def get_balance(user_id):
     global conn
     try:
         cursor = get_cursor()
-        cursor.execute(f"SELECT tokens FROM users WHERE user_id={user_id}")
-        tokens = cursor.fetchone()
-        return tokens[0]
+        cursor.execute(f"SELECT balance FROM users WHERE user_id={user_id}")
+        balance = cursor.fetchone()
+        return balance[0]
     except:
         return 0
 
@@ -127,8 +152,8 @@ def get_refers(user_id):
     try:
         cursor = get_cursor()
         cursor.execute(f"SELECT refers FROM users WHERE user_id={user_id}")
-        tokens = cursor.fetchone()
-        return tokens[0]
+        balance = cursor.fetchone()
+        return balance[0]
     except:
         return 0
 
@@ -137,18 +162,29 @@ def get_key():
     global conn
     try:
         cursor = get_cursor()
-        cursor.execute(f"SELECT openai_key FROM options")
-        tokens = cursor.fetchone()
-        return tokens[0]
+        cursor.execute(f"SELECT openai_key FROM options WHERE is_active=1")
+        balance = cursor.fetchone()
+        return balance[0]
     except:
         return 0
 
 
-def update_tokens(user_id, tokens):
+def new_key(openai_key, balance):
     global conn
     try:
         cursor = get_cursor()
-        cursor.execute(f"UPDATE users SET tokens=tokens+{tokens} WHERE user_id={user_id}")
+        cursor.execute(f"INSERT INTO keys(openai_key, balance) VALUES(%s, %s)", (openai_key, balance))
+        conn.commit()
+        return 1
+    except:
+        return 0
+
+
+def update_balance(user_id, balance):
+    global conn
+    try:
+        cursor = get_cursor()
+        cursor.execute(f"UPDATE users SET balance=balance+{balance} WHERE user_id={user_id}")
         conn.commit()
         return 1
     except:
@@ -160,6 +196,17 @@ def update_refers(user_id):
     try:
         cursor = get_cursor()
         cursor.execute(f"UPDATE users SET refers=refers+1 WHERE user_id={user_id}")
+        conn.commit()
+        return 1
+    except:
+        return 0
+
+
+def update_model(user_id, model):
+    global conn
+    try:
+        cursor = get_cursor()
+        cursor.execute(f"UPDATE users SET model=%s WHERE user_id=%s", (model, user_id))
         conn.commit()
         return 1
     except:
