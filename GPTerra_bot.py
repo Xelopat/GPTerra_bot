@@ -187,6 +187,7 @@ def switch_ai(message):
         bot.send_message(user_id, "Админка", reply_markup=admin_k)
         return
     model = delete_emoji(text)
+    print(model)
     if model in price:
         bot.send_message(user_id, description[model])
         update_model(user_id, model)

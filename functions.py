@@ -15,11 +15,6 @@ def take_rub():
 
 
 def delete_emoji(text):
-    emoji_pattern = re.compile("["
-                               u"\U0001F600-\U0001F64F"  # эмодзи лиц
-                               u"\U0001F300-\U0001F5FF"  # эмодзи природы
-                               u"\U0001F680-\U0001F6FF"  # эмодзи транспорта
-                               u"\U0001F1E0-\U0001F1FF"  # эмодзи флагов
-                               "]+", flags=re.UNICODE)
-
-    return emoji_pattern.sub(r'', text)
+    symbol_pattern = re.compile('[^a-zA-Z0-9-]')
+    text_without_symbols = symbol_pattern.sub('', text)
+    return text_without_symbols
