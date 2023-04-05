@@ -1,3 +1,5 @@
+import re
+
 import requests  # Модуль для обработки URL
 from bs4 import BeautifulSoup  # Модуль для работы с HTML
 
@@ -11,3 +13,13 @@ def take_rub():
     convert = soup.findAll("span", {"class": "SwHCTb", "data-precision": 2})
     return float(convert[0].text.replace(",", "."))
 
+
+def delete_emoji(text):
+    emoji_pattern = re.compile("["
+                               u"\U0001F600-\U0001F64F"  # эмодзи лиц
+                               u"\U0001F300-\U0001F5FF"  # эмодзи природы
+                               u"\U0001F680-\U0001F6FF"  # эмодзи транспорта
+                               u"\U0001F1E0-\U0001F1FF"  # эмодзи флагов
+                               "]+", flags=re.UNICODE)
+
+    return emoji_pattern.sub(r'', text)

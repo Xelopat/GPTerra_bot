@@ -1,4 +1,5 @@
 import mysql.connector
+import openai
 from mysql.connector import OperationalError, InterfaceError
 
 sql_host = "localhost"
@@ -25,6 +26,7 @@ def get_cursor():
     return conn.cursor(buffered=True)
 
 
+# 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
 def db_init():
     global conn
     conn1 = mysql.connector.connect(host=sql_host, user=sql_user, password=sql_password)
@@ -41,16 +43,13 @@ def db_init():
                    "refers INT DEFAULT 0,"
                    "date DATE DEFAULT (CURRENT_DATE)"
                    ")")
-    cursor.execute("CREATE TABLE IF NOT EXISTS keys("
+    cursor.execute("CREATE TABLE IF NOT EXISTS openai_keys("
                    "openai_key TEXT,"
                    "balance INT,"
                    "login TEXT,"
-                   "is_active BOOL DEFAULT 0"
+                   "is_active TINYINT DEFAULT 0"
                    ")")
     conn.commit()
-    if not get_key():
-        cursor.execute(f"INSERT INTO options(openai_key) VALUES('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')")
-        conn.commit()
     cursor.close()
 
 
@@ -58,10 +57,14 @@ def change_key(error):
     global conn
     cursor = get_cursor()
     if error == "limit":
-        cursor.execute(f"DELETE FROM keys WHERE is_active=1")
+        cursor.execute(f"DELETE FROM openai_keys WHERE is_active=1")
+
     else:
-        cursor.execute(f"UPDATE keys SET balance=0, is_active=0 WHERE is_active=1")
-    cursor.execute("UPDATE keys SET is_active=1 WHERE balance > 0 LIMIT 1")
+        cursor.execute(f"UPDATE openai_keys SET balance=0, is_active=0 WHERE is_active=1")
+    conn.commit()
+    cursor.execute("UPDATE openai_keys SET is_active=1 WHERE balance > 0 LIMIT 1")
+    conn.commit()
+
 
 def user_exists(user_id):
     global conn
@@ -162,18 +165,19 @@ def get_key():
     global conn
     try:
         cursor = get_cursor()
-        cursor.execute(f"SELECT openai_key FROM options WHERE is_active=1")
+        cursor.execute(f"SELECT openai_key FROM openai_keys WHERE is_active=1")
         balance = cursor.fetchone()
         return balance[0]
     except:
         return 0
 
 
-def new_key(openai_key, balance):
+def new_key(openai_key, balance, login):
     global conn
     try:
         cursor = get_cursor()
-        cursor.execute(f"INSERT INTO keys(openai_key, balance) VALUES(%s, %s)", (openai_key, balance))
+        cursor.execute(f"INSERT INTO openai_keys(openai_key, balance, login) VALUES(%s, %s, %s)",
+                       (openai_key, balance, login))
         conn.commit()
         return 1
     except:

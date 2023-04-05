@@ -20,8 +20,12 @@ bot = telebot.TeleBot("6181517228:AAEtFBfBC_H8LAWxj9ZBnm9w1wtzcyfKvHw", parse_mo
 kf = 3
 kf_i = 2
 
-
-# openai.api_key = get_key()
+new_key = get_key()
+if new_key:
+    openai.api_key = new_key
+else:
+    change_key("")
+    openai.api_key = get_key()
 
 
 @bot.my_chat_member_handler()
@@ -65,7 +69,7 @@ def new_message(message):
                 bot.send_message(user_id, sql(text[4:]), reply_markup=admin_k)
                 return
             elif text == admin_k.keyboard[0][0]["text"]:
-                bot.send_message(user_id, "Введите новый ключ формат <key> <amount> <login|pass>",
+                bot.send_message(user_id, "Введите новый ключ формат key amount login|pass",
                                  reply_markup=back_k)
                 bot.register_next_step_handler_by_chat_id(chat_id, set_key)
                 return
@@ -103,7 +107,7 @@ def new_message(message):
                              reply_markup=all_ai_k)
             bot.register_next_step_handler_by_chat_id(user_id, switch_ai)
             return
-        elif text == main_k.keyboard[0][2]["text"]:
+        elif text == main_k.keyboard[0][1]["text"]:
             bot.send_message(user_id, f"text", disable_web_page_preview=True,
                              reply_markup=create_repost_k(user_id))
             return
@@ -155,6 +159,7 @@ def new_message(message):
             e = str(e)
             if e == limit_err:
                 if change_key("limit"):
+                    openai.api_key = get_key()
                     new_message(message)
                 else:
                     bot.edit_message_text("🗝️Закончились ключи, ожидайте пополнения🗝️", chat_id, to_edit)
@@ -164,6 +169,7 @@ def new_message(message):
                 bot.edit_message_text("👾Ошибка CHAT-GPT👾", chat_id, to_edit)
             elif e == key_error_0 or e == key_error_1:
                 if change_key("key_error"):
+                    openai.api_key = get_key()
                     new_message(message)
                 else:
                     bot.edit_message_text("🗝️Закончились ключи, ожидайте пополнения🗝️", chat_id, to_edit)
@@ -180,9 +186,10 @@ def switch_ai(message):
     if text == back_k.keyboard[0][0]["text"]:
         bot.send_message(user_id, "Админка", reply_markup=admin_k)
         return
-    if text in price:
-        bot.send_message(user_id, description[text])
-        update_model(user_id, text)
+    model = delete_emoji(text)
+    if model in price:
+        bot.send_message(user_id, description[model])
+        update_model(user_id, model)
         bot.send_message(user_id, "Нейросеть успешно подключена. Введите запрос", reply_markup=main_k)
     else:
         bot.send_message(user_id, "Нет такой нейронки")
@@ -197,12 +204,13 @@ def set_key(message):
         return
     info = text.split()
     if len(info) == 3:
-        new_key(info[0], info[1])
+        new_key(info[0], info[1], info[2])
         openai.api_key = text
         bot.send_message(user_id, "Ключ добавлен", reply_markup=admin_k)
     else:
         bot.send_message(user_id, "Не все данные", reply_markup=admin_k)
         bot.register_next_step_handler_by_chat_id(user_id, set_key)
+
 
 def create_statistic():
     statistic = get_statistic_day()
