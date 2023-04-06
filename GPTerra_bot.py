@@ -14,6 +14,10 @@ from functions import *
 from config import *
 from errors import *
 
+try:
+    os.mkdir("./users_photos")
+except FileExistsError:
+    pass
 ruble_rate = take_rub()
 matplotlib.use('Agg')
 bot = telebot.TeleBot("6181517228:AAEtFBfBC_H8LAWxj9ZBnm9w1wtzcyfKvHw", parse_mode="HTML")  # server
@@ -55,7 +59,7 @@ def start_message(message):
 
 
 @bot.message_handler(content_types=['text'])
-def new_message(message):
+def i_get_message(message):
     if message.chat.type == "private":
         chat_id = message.chat.id
         text = message.text
@@ -128,7 +132,7 @@ def new_message(message):
             my_model = get_model(user_id)
             if my_model == "DALLE":
                 to_edit = bot.send_animation(user_id, open('load_photo.gif', 'rb'),
-                                               reply_to_message_id=message_id).message_id
+                                             reply_to_message_id=message_id).message_id
                 response = openai.Image.create(
                     prompt=text,
                     n=1,
@@ -141,6 +145,27 @@ def new_message(message):
                 with open(f'./users_photos/{user_id}.jpg', 'wb') as handler:
                     handler.write(img_data)
                 bot.edit_message_media(InputMediaPhoto(open(f'./users_photos/{user_id}.jpg', 'rb')), user_id, to_edit)
+            elif my_model == "gpt-3.5-turbo":
+                to_edit = bot.send_message(user_id, "⌛️Ожидание ответа", reply_to_message_id=message_id).message_id
+                new_message(user_id, 0, text)
+                all_messages = get_messages(user_id)
+                messages_mas = []
+                for i in all_messages:
+                    if i[0] == 0:
+                        role = "user"
+                    else:
+                        role = "assistant"
+                    messages_mas.append({"role": role, "content": i[1]})
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=messages_mas
+                )
+                tokens_used = response.usage.total_tokens
+                amount = kf * (tokens_used * price[my_model] * ruble_rate / 1000)
+                update_balance(user_id, -amount)
+                result = response.choices[0].message.content
+                bot.edit_message_text(result, chat_id, to_edit)
+                new_message(user_id, 1, result)
             else:
                 to_edit = bot.send_message(user_id, "⌛️Ожидание ответа", reply_to_message_id=message_id).message_id
                 response = openai.Completion.create(engine=my_model,
@@ -174,7 +199,7 @@ def new_message(message):
                 bot.edit_message_text("🗄️Сервер перегружен, повторите попытку позже🗄️", chat_id, to_edit)
             elif e == server_error:
                 bot.edit_message_text("👾Ошибка CHAT-GPT👾", chat_id, to_edit)
-            elif e == key_error_0 or e == key_error_1:
+            elif e == key_error_0 or e == key_error_1 or e == key_error_2:
                 if change_key("key_error"):
                     openai.api_key = get_key()
                     new_message(message)
@@ -211,7 +236,6 @@ def set_key(message):
         return
     info = text.split()
     if len(info) == 3:
-        print(info)
         new_key(info[0], info[1], info[2])
         openai.api_key = text
         bot.send_message(user_id, "Ключ добавлен", reply_markup=admin_k)

@@ -49,6 +49,12 @@ def db_init():
                    "login TEXT,"
                    "is_active TINYINT DEFAULT 0"
                    ")")
+    cursor.execute("CREATE TABLE IF NOT EXISTS messages("
+                   "user_id BIGINT,"
+                   "role TINYINT,"  # 0 - user, 1 - ai
+                   "message TEXT,"
+                   "date DATE DEFAULT (CURRENT_DATE)"
+                   ")")
     conn.commit()
     cursor.close()
 
@@ -91,6 +97,18 @@ def get_model(user_id):
     except Exception as e:
         print(e)
         return "text-davinci-003"
+
+
+def get_messages(user_id):
+    global conn
+    try:
+        cursor = get_cursor()
+        cursor.execute(f"SELECT role, message FROM messages WHERE user_id=%s ORDER BY date", (user_id,))
+        messages = cursor.fetchall()
+        return messages
+    except Exception as e:
+        print(e)
+        return []
 
 
 def get_statistic_day():
@@ -178,6 +196,18 @@ def new_key(openai_key, balance, login):
         cursor = get_cursor()
         cursor.execute(f"INSERT INTO openai_keys(openai_key, balance, login) VALUES(%s, %s, %s)",
                        (openai_key, balance, login))
+        conn.commit()
+        return 1
+    except:
+        return 0
+
+
+def new_message(user_id, role, message):
+    global conn
+    try:
+        cursor = get_cursor()
+        cursor.execute(f"INSERT INTO messages(user_id, role, message) VALUES(%s, %s, %s)",
+                       (user_id, role, message))
         conn.commit()
         return 1
     except:
