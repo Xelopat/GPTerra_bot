@@ -53,7 +53,7 @@ def db_init():
                    "user_id BIGINT,"
                    "role TINYINT,"  # 0 - user, 1 - ai
                    "message TEXT,"
-                   "date DATE DEFAULT (CURRENT_DATE)"
+                   "date TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
                    ")")
     conn.commit()
     cursor.close()
@@ -206,11 +206,14 @@ def new_message(user_id, role, message):
     global conn
     try:
         cursor = get_cursor()
+        cursor.execute("DELETE FROM messages WHERE date NOT IN "
+                       "(SELECT * FROM (SELECT date FROM messages ORDER BY date DESC LIMIT 100) AS T)")
         cursor.execute(f"INSERT INTO messages(user_id, role, message) VALUES(%s, %s, %s)",
                        (user_id, role, message))
         conn.commit()
         return 1
-    except:
+    except Exception as e:
+        print(e)
         return 0
 
 
@@ -263,6 +266,17 @@ def del_user(user_id):
     try:
         cursor = get_cursor()
         cursor.execute(f"UPDATE users SET date='1977-01-01' WHERE user_id={user_id}")
+        conn.commit()
+        return 1
+    except:
+        return 0
+
+
+def del_messages(user_id):
+    global conn
+    try:
+        cursor = get_cursor()
+        cursor.execute(f"DELETE FROM messages WHERE user_id={user_id}")
         conn.commit()
         return 1
     except:

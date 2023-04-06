@@ -111,6 +111,10 @@ def i_get_message(message):
                              reply_markup=all_ai_k)
             bot.register_next_step_handler_by_chat_id(user_id, switch_ai)
             return
+        elif text == main_chat_k.keyboard[1][0]["text"]:
+            bot.send_message(user_id, f"История успешно очищена! Начните диалог сначала")
+            del_messages(user_id)
+            return
         elif text == main_k.keyboard[0][1]["text"]:
             bot.send_message(user_id, f"text", disable_web_page_preview=True,
                              reply_markup=create_repost_k(user_id))
@@ -192,19 +196,19 @@ def i_get_message(message):
             if e == limit_err:
                 if change_key("limit"):
                     openai.api_key = get_key()
-                    new_message(message)
+                    i_get_message(message)
                 else:
-                    bot.edit_message_text("🗝️Закончились ключи, ожидайте пополнения🗝️", chat_id, to_edit)
+                    bot.send_message(chat_id, "🗝️Закончились ключи, ожидайте пополнения🗝️")
             elif e == overload_err:
-                bot.edit_message_text("🗄️Сервер перегружен, повторите попытку позже🗄️", chat_id, to_edit)
+                bot.send_message(chat_id, "🗄️Сервер перегружен, повторите попытку позже🗄️")
             elif e == server_error:
-                bot.edit_message_text("👾Ошибка CHAT-GPT👾", chat_id, to_edit)
+                bot.send_message(chat_id, "👾Ошибка CHAT-GPT👾")
             elif e == key_error_0 or e == key_error_1 or e == key_error_2:
                 if change_key("key_error"):
                     openai.api_key = get_key()
-                    new_message(message)
+                    i_get_message(message)
                 else:
-                    bot.edit_message_text("🗝️Закончились ключи, ожидайте пополнения🗝️", chat_id, to_edit)
+                    bot.send_message(chat_id, "🗝️Закончились ключи, ожидайте пополнения🗝️")
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'check_sub')
@@ -222,7 +226,11 @@ def switch_ai(message):
     if model in price:
         bot.send_message(user_id, description[model])
         update_model(user_id, model)
-        bot.send_message(user_id, "Нейросеть успешно подключена. Введите запрос", reply_markup=main_k)
+        if model == "gpt-3.5-turbo":
+            keyboard = main_chat_k
+        else:
+            keyboard = main_k
+        bot.send_message(user_id, "Нейросеть успешно подключена. Введите запрос", reply_markup=keyboard)
     else:
         bot.send_message(user_id, "Нет такой нейронки")
         bot.register_next_step_handler_by_chat_id(user_id, switch_ai)
