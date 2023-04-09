@@ -11,7 +11,7 @@ main_k = ReplyKeyboardMarkup(resize_keyboard=True)
 main_k.add("👤Профиль👤", "🤖Выбор нейронки🤖")
 
 main_chat_k = ReplyKeyboardMarkup(resize_keyboard=True)
-main_chat_k.add("👤Профиль👤", "🤖Выбор нейросети🤖")
+main_chat_k.add("👤Профиль👤", "🤖Выбор нейронки🤖")
 main_chat_k.add("🧹Очистить историю🧹")
 
 
