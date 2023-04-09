@@ -6,10 +6,8 @@ sql_host = "localhost"
 sql_db = "GPTerra"
 sql_user = "root"
 
-sql_password = "root"  # local
-
-
-# sql_password = "discount777"  # server
+# sql_password = "root"  # local
+sql_password = "VGiu6$#2dKJvcdwUt25"  # server
 
 
 def connect():
@@ -62,7 +60,8 @@ def db_init():
 def change_key():
     global conn
     cursor = get_cursor()
-    cursor.execute(f"UPDATE openai_keys SET balance=0, is_active=0 WHERE is_active=1")
+    cursor.execute(f"UPDATE openai_keys SET balance=0 WHERE balance<=0")
+    cursor.execute(f"UPDATE openai_keys SET is_active=0")
     conn.commit()
     cursor.execute("UPDATE openai_keys SET is_active=1 WHERE balance > 0 LIMIT 1")
     conn.commit()

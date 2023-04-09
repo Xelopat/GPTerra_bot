@@ -8,7 +8,7 @@ back = KeyboardButton("Назад")
 back_k.add(back)
 
 main_k = ReplyKeyboardMarkup(resize_keyboard=True)
-main_k.add("👤Профиль👤", "🤖Выбор нейросети🤖")
+main_k.add("👤Профиль👤", "🤖Выбор нейронки🤖")
 
 main_chat_k = ReplyKeyboardMarkup(resize_keyboard=True)
 main_chat_k.add("👤Профиль👤", "🤖Выбор нейросети🤖")

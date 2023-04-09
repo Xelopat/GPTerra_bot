@@ -28,12 +28,13 @@ kf = 3
 kf_i = 2
 
 my_key = get_key()
-print(my_key)
 if my_key and my_key[1] > 0:
     openai.api_key = my_key[0]
 else:
     change_key()
-    openai.api_key = get_key()[0]
+    my_key = get_key()
+    if my_key:
+        openai.api_key = my_key[0]
 
 
 @bot.my_chat_member_handler()
@@ -85,11 +86,19 @@ def i_get_message(message):
             if text == ".":
                 bot.send_message(user_id, "Админка", reply_markup=admin_k)
                 return
+            elif text == "reconnect":
+                change_key()
+                try:
+                    openai.api_key = get_key()[0]
+                    bot.send_message(user_id, "Ключ обновлён", reply_markup=admin_k)
+                except:
+                    bot.send_message(user_id, "Ключи закончились!!!!!!", reply_markup=admin_k)
+                return
             elif text[:3] == "sql":
                 bot.send_message(user_id, sql(text[4:]), reply_markup=admin_k)
                 return
             elif text == admin_k.keyboard[0][0]["text"]:
-                bot.send_message(user_id, "Введите новый ключ формат key amount login|pass",
+                bot.send_message(user_id, "Введите новый ключ формат\nkey\namount\nemail pass",
                                  reply_markup=back_k)
                 bot.register_next_step_handler_by_chat_id(chat_id, set_key)
                 return
@@ -97,7 +106,7 @@ def i_get_message(message):
                 all_keys = get_all_keys()
                 key_text = ""
                 for i in all_keys:
-                    key_text += f"<code>{i[0]}</code>: {i[1]}$ (<code>{i[2]}</code>)  -  {'active' if i[3] else ''}\n\n"
+                    key_text += f"<code>{i[0]}</code>: {i[1]}$ (<code>{i[2]}</code>)  {'active' if i[3] else ''}\n\n"
                 bot.send_message(user_id, f"Все ключи:\n{key_text}", parse_mode="HTML")
                 return
             elif text == admin_k.keyboard[1][0]["text"]:
@@ -349,6 +358,7 @@ def switch_ai(message):
     if text == back_k.keyboard[0][0]["text"]:
         model = get_model(user_id)
         if model == "gpt-3.5-turbo":
+            del_messages(user_id)
             bot.send_message(user_id, f"Введите запрос, текущая модель: gpt-3.5-turbo", reply_markup=main_chat_k)
         else:
             bot.send_message(user_id, f"Введите запрос, текущая модель: {model}", reply_markup=main_k)
@@ -374,7 +384,7 @@ def set_key(message):
     if text == back_k.keyboard[0][0]["text"]:
         bot.send_message(user_id, "Админка", reply_markup=admin_k)
         return
-    info = text.split()
+    info = text.split("\n")
     if len(info) == 3:
         new_key(info[0], info[1], info[2])
         bot.send_message(user_id, "Ключ добавлен", reply_markup=admin_k)
