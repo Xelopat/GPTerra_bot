@@ -1,4 +1,4 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 from db import *
 from config import *
@@ -8,20 +8,21 @@ back = KeyboardButton("Назад")
 back_k.add(back)
 
 main_k = ReplyKeyboardMarkup(resize_keyboard=True)
-main_k.add("👩🏻‍💻Профиль👩🏻‍💻", "🤖Выбор нейросети🤖")
+main_k.add("👤Профиль👤", "🤖Выбор нейросети🤖")
 
 main_chat_k = ReplyKeyboardMarkup(resize_keyboard=True)
-main_chat_k.add("👩🏻‍💻Профиль👩🏻‍💻", "🤖Выбор нейросети🤖")
+main_chat_k.add("👤Профиль👤", "🤖Выбор нейросети🤖")
 main_chat_k.add("🧹Очистить историю🧹")
 
-main_chat_k = ReplyKeyboardMarkup(resize_keyboard=True)
-main_chat_k.add("👩🏻‍💻Профиль👩🏻‍💻", "🤖Выбор нейросети🤖")
-main_chat_k.add("🧹Очистить историю🧹")
 
 admin_k = ReplyKeyboardMarkup(resize_keyboard=True)
-admin_k.add("+Ключ", "Статистика")
-admin_k.add("Рассылка")
+admin_k.add("+Ключ", "Все ключи")
+admin_k.add("Рассылка", "Статистика")
 admin_k.add(back)
+
+amount_to_pay_k = ReplyKeyboardMarkup(resize_keyboard=True)
+amount_to_pay_k.add("100₽", "250₽ (+25₽)", "500₽ (+75₽)")
+amount_to_pay_k.add(back)
 
 all_ai_k = ReplyKeyboardMarkup(resize_keyboard=True)
 all_ai_k.add("💬gpt-3.5-turbo💬", "💪text-davinci-003💪")

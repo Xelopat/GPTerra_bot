@@ -45,7 +45,7 @@ def db_init():
                    ")")
     cursor.execute("CREATE TABLE IF NOT EXISTS openai_keys("
                    "openai_key TEXT,"
-                   "balance INT,"
+                   "balance DOUBLE,"
                    "login TEXT,"
                    "is_active TINYINT DEFAULT 0"
                    ")")
@@ -59,14 +59,10 @@ def db_init():
     cursor.close()
 
 
-def change_key(error):
+def change_key():
     global conn
     cursor = get_cursor()
-    if error == "limit":
-        cursor.execute(f"DELETE FROM openai_keys WHERE is_active=1")
-
-    else:
-        cursor.execute(f"UPDATE openai_keys SET balance=0, is_active=0 WHERE is_active=1")
+    cursor.execute(f"UPDATE openai_keys SET balance=0, is_active=0 WHERE is_active=1")
     conn.commit()
     cursor.execute("UPDATE openai_keys SET is_active=1 WHERE balance > 0 LIMIT 1")
     conn.commit()
@@ -183,9 +179,20 @@ def get_key():
     global conn
     try:
         cursor = get_cursor()
-        cursor.execute(f"SELECT openai_key FROM openai_keys WHERE is_active=1")
-        balance = cursor.fetchone()
-        return balance[0]
+        cursor.execute(f"SELECT openai_key, balance FROM openai_keys WHERE is_active=1")
+        openai_key = cursor.fetchone()
+        return openai_key
+    except:
+        return 0
+
+
+def get_all_keys():
+    global conn
+    try:
+        cursor = get_cursor()
+        cursor.execute(f"SELECT openai_key, balance, login, is_active FROM openai_keys")
+        all_keys = cursor.fetchall()
+        return all_keys
     except:
         return 0
 
@@ -225,6 +232,18 @@ def update_balance(user_id, balance):
         conn.commit()
         return 1
     except:
+        return 0
+
+
+def update_key_balance(balance):
+    global conn
+    try:
+        cursor = get_cursor()
+        cursor.execute(f"UPDATE openai_keys SET balance=balance+{balance} WHERE is_active=1")
+        conn.commit()
+        return 1
+    except Exception as e:
+        print(e)
         return 0
 
 
