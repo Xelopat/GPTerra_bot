@@ -18,15 +18,3 @@ def delete_emoji(text):
     symbol_pattern = re.compile('[^a-zA-Z0-9-.]')
     text_without_symbols = symbol_pattern.sub('', text)
     return text_without_symbols
-
-
-def plural_form(n, form1, form2, form5):
-    n = abs(n) % 100
-    n1 = n % 10
-    if 10 < n < 20:
-        return form5
-    if 1 < n1 < 5:
-        return form2
-    if n1 == 1:
-        return form1
-    return form5

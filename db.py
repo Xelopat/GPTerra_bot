@@ -6,8 +6,10 @@ sql_host = "localhost"
 sql_db = "GPTerra"
 sql_user = "root"
 
-# sql_password = "root"  # local
-sql_password = "VGiu6$#2dKJvcdwUt25"  # server
+sql_password = "root"  # local
+
+
+# sql_password = "discount777"  # server
 
 
 def connect():
@@ -43,7 +45,7 @@ def db_init():
                    ")")
     cursor.execute("CREATE TABLE IF NOT EXISTS openai_keys("
                    "openai_key TEXT,"
-                   "balance DOUBLE,"
+                   "balance INT,"
                    "login TEXT,"
                    "is_active TINYINT DEFAULT 0"
                    ")")
@@ -51,17 +53,20 @@ def db_init():
                    "user_id BIGINT,"
                    "role TINYINT,"  # 0 - user, 1 - ai
                    "message TEXT,"
-                   "date TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+                   "date DATE DEFAULT (CURRENT_DATE)"
                    ")")
     conn.commit()
     cursor.close()
 
 
-def change_key():
+def change_key(error):
     global conn
     cursor = get_cursor()
-    cursor.execute(f"UPDATE openai_keys SET balance=0 WHERE balance<=0")
-    cursor.execute(f"UPDATE openai_keys SET is_active=0")
+    if error == "limit":
+        cursor.execute(f"DELETE FROM openai_keys WHERE is_active=1")
+
+    else:
+        cursor.execute(f"UPDATE openai_keys SET balance=0, is_active=0 WHERE is_active=1")
     conn.commit()
     cursor.execute("UPDATE openai_keys SET is_active=1 WHERE balance > 0 LIMIT 1")
     conn.commit()
@@ -178,20 +183,9 @@ def get_key():
     global conn
     try:
         cursor = get_cursor()
-        cursor.execute(f"SELECT openai_key, balance FROM openai_keys WHERE is_active=1")
-        openai_key = cursor.fetchone()
-        return openai_key
-    except:
-        return 0
-
-
-def get_all_keys():
-    global conn
-    try:
-        cursor = get_cursor()
-        cursor.execute(f"SELECT openai_key, balance, login, is_active FROM openai_keys")
-        all_keys = cursor.fetchall()
-        return all_keys
+        cursor.execute(f"SELECT openai_key FROM openai_keys WHERE is_active=1")
+        balance = cursor.fetchone()
+        return balance[0]
     except:
         return 0
 
@@ -212,14 +206,11 @@ def new_message(user_id, role, message):
     global conn
     try:
         cursor = get_cursor()
-        cursor.execute("DELETE FROM messages WHERE date NOT IN "
-                       "(SELECT * FROM (SELECT date FROM messages ORDER BY date DESC LIMIT 100) AS T)")
         cursor.execute(f"INSERT INTO messages(user_id, role, message) VALUES(%s, %s, %s)",
                        (user_id, role, message))
         conn.commit()
         return 1
-    except Exception as e:
-        print(e)
+    except:
         return 0
 
 
@@ -231,18 +222,6 @@ def update_balance(user_id, balance):
         conn.commit()
         return 1
     except:
-        return 0
-
-
-def update_key_balance(balance):
-    global conn
-    try:
-        cursor = get_cursor()
-        cursor.execute(f"UPDATE openai_keys SET balance=balance+{balance} WHERE is_active=1")
-        conn.commit()
-        return 1
-    except Exception as e:
-        print(e)
         return 0
 
 
@@ -284,17 +263,6 @@ def del_user(user_id):
     try:
         cursor = get_cursor()
         cursor.execute(f"UPDATE users SET date='1977-01-01' WHERE user_id={user_id}")
-        conn.commit()
-        return 1
-    except:
-        return 0
-
-
-def del_messages(user_id):
-    global conn
-    try:
-        cursor = get_cursor()
-        cursor.execute(f"DELETE FROM messages WHERE user_id={user_id}")
         conn.commit()
         return 1
     except:
